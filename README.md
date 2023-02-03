@@ -1,6 +1,12 @@
 # AI Todo
 AI todo is a generic todo app that uses GPT as the back end. 
 
+The server is a simple api that can be called to set the state of the JSON 'database' which is stored in memory, this is passed to GPT with a prompt to manipulate that JSON and return with the response. 
+
+There are some predefined prompts such as "mark as complete/incomplete" or "delete", but the fun part is using the generic prompt end point to give a prompt and have it be applied to the JSON. 
+
+The app is just a react todo that consumes a JSON object and displays it. Some functionality is added here such as making a todo bold if it has the property `important` set to true or a property called `complete` which will set the text to be strike through. 
+
 ## How to run
 
 ### Server:
@@ -21,16 +27,7 @@ npm i
 npm start
 ```
 
-Now you can try a prompt like:
- ```
- Add a todo for each sport in the olympics
- ```
-or
-```
-Add a property called 'important' and make it true for every second item
-```
-
-Here are some examples:
+## Examples:
 ```
 Add a new todo for each sport in the Olympics setting the title as the sport
 ```
