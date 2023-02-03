@@ -34,16 +34,16 @@ Here are some examples:
 ```
 Add a new todo for each sport in the Olympics setting the title as the sport
 ```
-![OlympicSports](.\OlympicsSports.png)
+![OlympicSports](OlympicsSports.png)
 ```
 Add a new property to each todo called 'important' and mark every second todo as true
 ```
-![AddImportant](.\AddImportant.png)
+![AddImportant](AddImportant.png)
 ```
 Set 3 as complete
 ```
-![MarkAsComplete](.\MarkAsComplete.png)
+![MarkAsComplete](MarkAsComplete.png)
 ```
 Add a new todo for each step required to make a roast dinner
 ```
-![MakeARoast](.\MakeARoast.png)
+![MakeARoast](MakeARoast.png)
