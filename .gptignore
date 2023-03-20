@@ -1,0 +1,17 @@
+.git/*
+.git
+.gitignore
+.gptignore
+LICENSE
+.github/*
+*.png
+*.md
+node_modules
+*/node_modules
+*/.env
+package-lock.json
+*/package-lock.json
+*.ico
+*.svg
+git_to_text.js
+output.txt
