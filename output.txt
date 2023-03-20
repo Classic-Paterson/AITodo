@@ -8,12 +8,14 @@ package.json
   "main": "api.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "git-to-text": "node git_to_text.js"
+    "gpt": "node gpt.js",
+    "chunks": "node --experimental-modules chunk.mjs"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
     "body-parser": "^1.20.1",
+    "clipboardy": "^3.0.0",
     "dotenv": "^16.0.3",
     "express": "^4.18.2",
     "fast-glob": "^3.2.12",
@@ -37,12 +39,14 @@ package.json
   "main": "api.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "git-to-text": "node git_to_text.js"
+    "gpt": "node gpt.js",
+    "chunks": "node --experimental-modules chunk.mjs"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
     "body-parser": "^1.20.1",
+    "clipboardy": "^3.0.0",
     "dotenv": "^16.0.3",
     "express": "^4.18.2",
     "fast-glob": "^3.2.12",
@@ -56,7 +60,7 @@ package.json
 
 
 ----
-git_to_text.js
+gpt.js
 const fs = require("fs");
 const path = require("path");
 const glob = require("glob");
@@ -77,7 +81,7 @@ function processRepository(repoPath, ignoreList, outputFile) {
   }
 }
 
-const repoPath = process.argv[2];
+const repoPath = process.argv[2] ?? './';
 if (!repoPath) {
   console.log("Usage: node git_to_text.js /path/to/git/repository [-p /path/to/preamble.txt] [-o /path/to/output_file.txt]");
   process.exit(1);
@@ -101,6 +105,50 @@ if (preambleFile) {
 processRepository(repoPath, ignoreList, outputFilePath);
 fs.appendFileSync(outputFilePath, "--END--");
 console.log(`Repository contents written to ${outputFilePath}.`);
+
+----
+chunk.mjs
+import fs from 'fs';
+import readline from 'readline';
+import clipboardy from 'clipboardy';
+
+const main = async (filePath) => {
+  const fileStream = fs.createReadStream(filePath, { encoding: 'utf-8' });
+  const rl = readline.createInterface({ input: fileStream });
+
+  let buffer = '';
+
+  for await (const line of rl) {
+    buffer += line;
+    if (buffer.length >= 4000) {
+      await clipboardy.write(buffer.slice(0, 4000));
+      buffer = buffer.slice(4000);
+      console.log('Copied 4000 characters to clipboard. Press any key to continue...');
+      await new Promise((resolve) => {
+        process.stdin.once('data', () => {
+          process.stdin.removeAllListeners('data');
+          resolve();
+        });
+      });
+    }
+  }
+
+  if (buffer.length > 0) {
+    await clipboardy.write(buffer);
+    console.log('Copied the remaining characters to clipboard. Press any key to exit...');
+    await new Promise((resolve) => {
+      process.stdin.once('data', () => {
+        process.stdin.removeAllListeners('data');
+        resolve();
+      });
+    });
+  }
+
+  process.stdin.pause();
+};
+
+const filePath = process.argv[2] || './output.txt';
+main(filePath).catch((err) => console.error(err));
 
 ----
 server\package.json
@@ -651,6 +699,22 @@ app\src\App.css
 }
 
 ----
+app\src\components\TodoProperties.js
+import React from "react";
+
+const TodoProperties = ({ todo }) => {
+  return (
+    <>
+      {Object.values(todo).map((value) => (
+        <td className={`px-6 py-4 capitalize ${todo.complete ? "line-through" : ""} ${todo.important ? "font-bold" : ""}`}>{value.toString()}</td>
+      ))}
+    </>
+  );
+};
+
+export default TodoProperties;
+
+----
 app\src\components\TodoList.js
 import Todo from "./Todo";
 
@@ -676,12 +740,12 @@ const TodoList = ({ todos, deleteTodo, completeTodo }) => (
 export default TodoList;
 
 ----
-app\src\components\Todo.js
+app\src\components\TodoActions.js
 import React from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faTrash, faCheck, faXmark } from "@fortawesome/free-solid-svg-icons";
 
-const Todo = ({ todo, deleteTodo, completeTodo }) => {
+const TodoActions = ({ todo, deleteTodo, completeTodo }) => {
   const handleDelete = (e) => {
     e.preventDefault();
     deleteTodo(todo.id);
@@ -693,27 +757,39 @@ const Todo = ({ todo, deleteTodo, completeTodo }) => {
   };
 
   return (
+    <td className="text-right">
+      <div className="w-full">
+        <button onClick={handleDelete} className="rounded bg-red-500 text-white py-2 px-4 hover:bg-red-600 mr-2">
+          <FontAwesomeIcon icon={faTrash} />
+        </button>
+        <button
+          onClick={handleComplete}
+          className={`rounded ${todo.complete ? "bg-yellow-500" : "bg-green-500"} text-white py-2 px-4 mr-2 ${
+            todo.complete ? "hover:bg-yellow-600" : "hover:bg-green-600"
+          }`}
+        >
+          <div style={{ width: "1rem", height: "1.5rem" }}>
+            {todo.complete ? <FontAwesomeIcon icon={faXmark} /> : <FontAwesomeIcon icon={faCheck} />}
+          </div>
+        </button>
+      </div>
+    </td>
+  );
+};
+
+export default TodoActions;
+
+----
+app\src\components\Todo.js
+import React from "react";
+import TodoProperties from "./TodoProperties";
+import TodoActions from "./TodoActions";
+
+const Todo = ({ todo, deleteTodo, completeTodo }) => {
+  return (
     <tr className="hover:bg-gray-100">
-      {Object.values(todo).map((value) => (
-        <td className={`px-6 py-4 capitalize ${todo.complete ? "text-decoration-line: line-through" : ""} ${todo.important ? "font-bold" : ""}`}>{value.toString()}</td>
-      ))}
-      <td className="text-right">
-        <div className="w-full">
-          <button onClick={handleDelete} className="rounded bg-red-500 text-white py-2 px-4 hover:bg-red-600 mr-2">
-            <FontAwesomeIcon icon={faTrash} />
-          </button>
-          <button
-            onClick={handleComplete}
-            className={`rounded ${todo.complete ? "bg-yellow-500" : "bg-green-500"} text-white py-2 px-4 mr-2 ${
-              todo.complete ? "hover:bg-yellow-600" : "hover:bg-green-600"
-            }`}
-          >
-            <div style={{ width: "1rem", height: "1.5rem" }}>
-              {todo.complete ? <FontAwesomeIcon icon={faXmark} /> : <FontAwesomeIcon icon={faCheck} />}
-            </div>
-          </button>
-        </div>
-      </td>
+      <TodoProperties todo={todo} />
+      <TodoActions todo={todo} deleteTodo={deleteTodo} completeTodo={completeTodo} />
     </tr>
   );
 };

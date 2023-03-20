@@ -18,7 +18,7 @@ function processRepository(repoPath, ignoreList, outputFile) {
   }
 }
 
-const repoPath = process.argv[2];
+const repoPath = process.argv[2] ?? './';
 if (!repoPath) {
   console.log("Usage: node git_to_text.js /path/to/git/repository [-p /path/to/preamble.txt] [-o /path/to/output_file.txt]");
   process.exit(1);
