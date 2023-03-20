@@ -1,0 +1,828 @@
+The following text is a Git repository with code. The structure of the text are sections that begin with ----, followed by a single line containing the file path and file name, followed by a variable amount of lines containing the file contents. The text representing the Git repository ends when the symbols --END-- are encounted. Any further text beyond --END-- are meant to be interpreted as instructions using the aforementioned Git repository as context.
+----
+package.json
+{
+  "name": "gptbackend",
+  "version": "1.0.0",
+  "description": "",
+  "main": "api.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "git-to-text": "node git_to_text.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "body-parser": "^1.20.1",
+    "dotenv": "^16.0.3",
+    "express": "^4.18.2",
+    "fast-glob": "^3.2.12",
+    "gitignore-parser": "^0.0.2",
+    "glob": "^9.3.0",
+    "ignore": "^5.2.4",
+    "minimatch": "^3.0.4",
+    "walk": "^2.3.15"
+  }
+}
+
+----
+output.txt
+The following text is a Git repository with code. The structure of the text are sections that begin with ----, followed by a single line containing the file path and file name, followed by a variable amount of lines containing the file contents. The text representing the Git repository ends when the symbols --END-- are encounted. Any further text beyond --END-- are meant to be interpreted as instructions using the aforementioned Git repository as context.
+----
+package.json
+{
+  "name": "gptbackend",
+  "version": "1.0.0",
+  "description": "",
+  "main": "api.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "git-to-text": "node git_to_text.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "body-parser": "^1.20.1",
+    "dotenv": "^16.0.3",
+    "express": "^4.18.2",
+    "fast-glob": "^3.2.12",
+    "gitignore-parser": "^0.0.2",
+    "glob": "^9.3.0",
+    "ignore": "^5.2.4",
+    "minimatch": "^3.0.4",
+    "walk": "^2.3.15"
+  }
+}
+
+
+----
+git_to_text.js
+const fs = require("fs");
+const path = require("path");
+const glob = require("glob");
+
+function getIgnoreList(ignoreFilePath) {
+  const ignoreList = fs.readFileSync(ignoreFilePath, "utf-8").split("\n").map(line => line.trim());
+  return ignoreList;
+}
+
+function processRepository(repoPath, ignoreList, outputFile) {
+  const allFiles = glob.sync(`${repoPath}/**/*`, { dot: true, nodir: true, ignore: ignoreList });
+  const filteredFiles = allFiles.filter(file => !file.includes("node_modules"));
+
+  for (const file of filteredFiles) {
+    const relativeFilePath = path.relative(repoPath, file);
+    const contents = fs.readFileSync(file, "utf-8");
+    fs.appendFileSync(outputFile, `----\n${relativeFilePath}\n${contents}\n`);
+  }
+}
+
+const repoPath = process.argv[2];
+if (!repoPath) {
+  console.log("Usage: node git_to_text.js /path/to/git/repository [-p /path/to/preamble.txt] [-o /path/to/output_file.txt]");
+  process.exit(1);
+}
+
+const ignoreFilePath = path.join(repoPath, ".gptignore");
+const ignoreList = fs.existsSync(ignoreFilePath) ? getIgnoreList(ignoreFilePath) : [];
+
+const preambleFile = process.argv.includes("-p") ? process.argv[process.argv.indexOf("-p") + 1] : null;
+const outputFilePath = process.argv.includes("-o") ? process.argv[process.argv.indexOf("-o") + 1] : "output.txt";
+
+fs.writeFileSync(outputFilePath, "");
+
+if (preambleFile) {
+  const preambleText = fs.readFileSync(preambleFile, "utf-8");
+  fs.appendFileSync(outputFilePath, `${preambleText}\n`);
+} else {
+  fs.appendFileSync(outputFilePath, "The following text is a Git repository with code. The structure of the text are sections that begin with ----, followed by a single line containing the file path and file name, followed by a variable amount of lines containing the file contents. The text representing the Git repository ends when the symbols --END-- are encounted. Any further text beyond --END-- are meant to be interpreted as instructions using the aforementioned Git repository as context.\n");
+}
+
+processRepository(repoPath, ignoreList, outputFilePath);
+fs.appendFileSync(outputFilePath, "--END--");
+console.log(`Repository contents written to ${outputFilePath}.`);
+
+----
+server\package.json
+{
+  "name": "gptbackend",
+  "version": "1.0.0",
+  "description": "",
+  "main": "api.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "body-parser": "^1.20.1",
+    "dotenv": "^16.0.3",
+    "express": "^4.18.2",
+    "node-fetch": "^2.6.9"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.21"
+  }
+}
+
+----
+server\api.js
+const express = require("express");
+const app = express();
+const bodyParser = require("body-parser");
+require("dotenv").config();
+const fetch = require("node-fetch");
+
+app.use(bodyParser.json());
+
+app.use((req, res, next) => {
+  res.header("Access-Control-Allow-Origin", "*");
+  res.header("Access-Control-Allow-Methods", "GET, PUT, POST, DELETE");
+  res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+  next();
+});
+
+let todos = [
+  { id: 1, title: "Example Todo 1", complete: false, importance: 3 },
+  { id: 2, title: "Example Todo 2", complete: true, importance: 1 },
+];
+
+const sortTodos = () => {
+  todos.sort((a, b) => {
+    if (a.complete === b.complete) {
+      return b.importance - a.importance;
+    }
+    return a.complete - b.complete;
+  });
+};
+
+
+let getPrompt = (action, todo, id, importance) => {
+  let prompt = `Given the state of this store: ${JSON.stringify(todos)}, `;
+
+  switch (action) {
+    case "add":
+      prompt += `add a new item with the title: ${todo}, importance: ${importance}, and auto increment the id`;
+      break;
+
+    case "update":
+      prompt += `what should the new state of my array be after a the item with the id: ${id} has its title updated to title: ${todo}`;
+      break;
+
+    case "complete":
+      prompt += `what should the new state of my array be after a the item with the id: ${id} has it's 'complete' status set to the opposite of what it is now`;
+      break;
+
+    case "delete":
+      prompt += `what should the new state of my array be after the item with the id: ${id} is removed`;
+      break;
+
+    case "getOne":
+      prompt += `give me the item with the id: ${id}`;
+      break;
+
+    default:
+      return null;
+  }
+
+  return `${prompt}? Provide your answer in JSON form ensuring that each item has an 'id' and a 'title' property and no other values are changed from the existing array if not explicitly told to. Ensure that the 'title' property adheres to correct grammar, proper capitalization, and spelling. Reply with only the answer in JSON form and include no other commentary.`;
+};
+
+// Create a todo
+app.post("/todos", async (req, res) => {
+  try {
+    const { todo, importance } = req.body;
+    const prompt = getPrompt("add", todo, importance);
+
+    const response = await callApi(prompt);
+    const data = await response.json();
+
+    todos = JSON.parse(data.choices[0].text);
+    sortTodos();
+
+    res.status(201).json({ message: "Todo created successfully", todos });
+  } catch (error) {
+    res.status(500).json({ message: "An error occured" });
+  }
+});
+
+
+// Update a todo
+app.put("/todos/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { todo } = req.body;
+
+    let prompt = getPrompt("update", todo, id, null);
+    const response = await callApi(prompt);
+
+    const data = await response.json();
+    const returnData = data.choices[0].text;
+    todos = JSON.parse(returnData);
+    sortTodos();
+
+    res.json({
+      message: `Todo with id ${id} updated successfully`,
+      todos,
+    });
+  } catch (error) {
+    res.status(500).json({ message: "An error occured" });
+  }
+});
+
+// Update a todo
+app.put("/prompt", async (req, res) => {
+  try {
+    const { prompt } = req.body;
+    let sneekyPrompt = `Given the state of this store: ${JSON.stringify(
+      todos
+      )}, what should the new state of my array be after performing the following ${prompt}? Provide your answer in JSON form ensuring that each item has an 'id' and a 'title' property and no other values are changed from the existing array if not explicitly told to. Reply with only the answer in JSON form and include no other commentary.`;
+      
+      const response = await callApi(sneekyPrompt);
+
+    const data = await response.json();
+    const returnData = data.choices[0].text;
+    todos = JSON.parse(returnData);
+
+    res.json({
+      message: `Prompt ${prompt} successfully executed`,
+      todos,
+    });
+  } catch (error) {
+    res.status(500).json({ message: "An error occured" });
+  }
+});
+
+app.put("/todos/:id/complete", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { todo } = req.body;
+
+    let prompt = getPrompt("complete", todo, id, null);
+    const response = await callApi(prompt);
+
+    const data = await response.json();
+    const generatedTodo = data.choices[0].text;
+    todos = JSON.parse(generatedTodo);
+
+    res.json({
+      message: `Todo with id ${id} completed successfully`,
+      todos,
+    });
+  } catch (error) {
+    res.status(500).json({ message: "An error occured" });
+  }
+});
+
+// Delete a todo
+app.delete("/todos/:id", async (req, res) => {
+  try {
+    const id = req.params.id;
+    const prompt = getPrompt("delete", "", id, null);
+    const response = await callApi(prompt);
+    const data = await response.json();
+    todos = JSON.parse(data.choices[0].text);
+    sortTodos();
+
+
+    res.json({
+      message: `Todo with id ${id} deleted successfully`,
+      todos,
+    });
+  } catch (error) {
+    res.status(500).json({ message: "An error occured" });
+  }
+});
+
+// Get a todo
+app.get("/todos/:id", async (req, res) => {
+  const id = req.params.id;
+  const prompt = getPrompt("getOne", "", id);
+
+  try {
+    const response = await callApi(prompt);
+    const data = await response.json();
+
+    const todo = JSON.parse(data.choices[0].text);
+
+    res.json(todo);
+  } catch (err) {
+    res.status(500).json({ message: "An error occured" });
+  }
+});
+
+// Get all todos
+app.get("/todos", (req, res) => {
+  res.json(todos);
+});
+
+const callApi = async (prompt) => {
+
+  const API_URL = "https://api.openai.com/v1/engines/text-davinci-003/completions";
+  const API_KEY = process.env.OPEN_AI_API_KEY;
+  try {
+
+    return fetch(API_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${API_KEY}`,
+      },
+      body: JSON.stringify({
+        prompt: prompt,
+        max_tokens: 2000,
+      }),
+    });
+  } catch (error) {
+    console.log(error)
+    res.status(500).json({ message: "An error occured" });
+  }
+};
+
+app.listen(3000, () => {
+  console.log("Server started on port 3000");
+});
+
+----
+app\tailwind.config.js
+/** @type {import('tailwindcss').Config} */
+module.exports = {
+  content: [
+    "./src/**/*.{js,jsx,ts,tsx}",
+  ],
+  theme: {
+    extend: {},
+  },
+  plugins: [],
+}
+
+----
+app\package.json
+{
+  "name": "app",
+  "version": "0.1.0",
+  "private": true,
+  "dependencies": {
+    "@fortawesome/fontawesome-svg-core": "^6.2.1",
+    "@fortawesome/free-solid-svg-icons": "^6.2.1",
+    "@fortawesome/react-fontawesome": "^0.2.0",
+    "@testing-library/jest-dom": "^5.16.5",
+    "@testing-library/react": "^13.4.0",
+    "@testing-library/user-event": "^13.5.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-scripts": "5.0.1",
+    "web-vitals": "^2.1.4"
+  },
+  "scripts": {
+    "start": "react-scripts start",
+    "build": "react-scripts build",
+    "test": "react-scripts test",
+    "eject": "react-scripts eject"
+  },
+  "eslintConfig": {
+    "extends": [
+      "react-app",
+      "react-app/jest"
+    ]
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  },
+  "devDependencies": {
+    "tailwindcss": "^3.2.4"
+  }
+}
+
+----
+app\.gitignore
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+
+# dependencies
+/node_modules
+/.pnp
+.pnp.js
+
+# testing
+/coverage
+
+# production
+/build
+
+# misc
+.DS_Store
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+----
+app\src\setupTests.js
+// jest-dom adds custom jest matchers for asserting on DOM nodes.
+// allows you to do things like:
+// expect(element).toHaveTextContent(/react/i)
+// learn more: https://github.com/testing-library/jest-dom
+import '@testing-library/jest-dom';
+
+----
+app\src\reportWebVitals.js
+const reportWebVitals = onPerfEntry => {
+  if (onPerfEntry && onPerfEntry instanceof Function) {
+    import('web-vitals').then(({ getCLS, getFID, getFCP, getLCP, getTTFB }) => {
+      getCLS(onPerfEntry);
+      getFID(onPerfEntry);
+      getFCP(onPerfEntry);
+      getLCP(onPerfEntry);
+      getTTFB(onPerfEntry);
+    });
+  }
+};
+
+export default reportWebVitals;
+
+----
+app\src\index.js
+import React from 'react';
+import ReactDOM from 'react-dom/client';
+import './index.css';
+import App from './App';
+import reportWebVitals from './reportWebVitals';
+
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(
+  <React.StrictMode>
+    <App />
+  </React.StrictMode>
+);
+
+// If you want to start measuring performance in your app, pass a function
+// to log results (for example: reportWebVitals(console.log))
+// or send to an analytics endpoint. Learn more: https://bit.ly/CRA-vitals
+reportWebVitals();
+
+----
+app\src\index.css
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: #f9f9f9;
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+    monospace;
+}
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+----
+app\src\App.test.js
+import { render, screen } from '@testing-library/react';
+import App from './App';
+
+test('renders learn react link', () => {
+  render(<App />);
+  const linkElement = screen.getByText(/learn react/i);
+  expect(linkElement).toBeInTheDocument();
+});
+
+----
+app\src\App.js
+import React, { useState, useEffect } from "react";
+import PromptForm from "./components/PromptForm";
+import TodoList from "./components/TodoList";
+
+const App = () => {
+  const [todos, setTodos] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  const showLoading = () => setLoading(true);
+  const hideLoading = () => setLoading(false);
+
+  const fetchTodos = async () => {
+    showLoading();
+    setError(false);
+
+    try {
+      const res = await fetch("http://localhost:3000/todos");
+      const data = await res.json();
+      console.log("todos", data)
+      setTodos(data);
+    } catch (err) {
+      console.error(err);
+      setError(true);
+    } finally {
+      hideLoading();
+    }
+  };
+
+  const executePrompt = async (prompt) => {
+    showLoading();
+    setError(false);
+
+    try {
+      const res = await fetch(`http://localhost:3000/prompt`, {
+        method: "PUT",
+        body: JSON.stringify({ prompt }),
+        headers: { "Content-Type": "application/json" },
+      });
+      const data = await res.json();
+      setTodos(data.todos);
+    } catch (err) {
+      console.error(err);
+      setError(true);
+    } finally {
+      hideLoading();
+    }
+  };
+
+  const deleteTodo = async (id) => {
+    showLoading();
+    setError(false);
+
+    try {
+      const res = await fetch(`http://localhost:3000/todos/${id}`, {
+        method: "DELETE",
+      });
+      const data = await res.json();
+      setTodos(data.todos);
+    } catch (err) {
+      console.error(err);
+      setError(true);
+    } finally {
+      hideLoading();
+    }
+  };
+
+  const completeTodo = async (id) => {
+    showLoading();
+    setError(false);
+
+    try {
+      const res = await fetch(`http://localhost:3000/todos/${id}/complete`, {
+        method: "PUT",
+      });
+      const data = await res.json();
+      setTodos(data.todos);
+    } catch (err) {
+      console.error(err);
+      setError(true);
+    } finally {
+      hideLoading();
+    }
+  };
+
+  useEffect(() => {
+    fetchTodos();
+    // eslint-disable-next-line
+  }, []);
+
+  return (
+    <div className="bg-white p-6 rounded-lg shadow-xl mx-auto max-w-3xl my-10">
+      <h1 className="text-4xl font-bold text-center mb-2">AI Todo</h1>
+      <PromptForm executePrompt={executePrompt} />
+      {loading && <div className="loading text-gray-600 text-center pt-3">Loading...</div>}
+      {!loading &&  todos?.length > 0 && <TodoList todos={todos} deleteTodo={deleteTodo} completeTodo={completeTodo} />}
+      {error && !loading && <div className="loading text-gray-600 text-center pt-3">Somethin' aint right...</div>}
+    </div>
+  );
+};
+
+export default App;
+
+----
+app\src\App.css
+.App {
+  text-align: center;
+}
+
+.App-logo {
+  height: 40vmin;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .App-logo {
+    animation: App-logo-spin infinite 20s linear;
+  }
+}
+
+.App-header {
+  background-color: #282c34;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: calc(10px + 2vmin);
+  color: white;
+}
+
+.App-link {
+  color: #61dafb;
+}
+
+@keyframes App-logo-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+----
+app\src\components\TodoList.js
+import Todo from "./Todo";
+
+const TodoList = ({ todos, deleteTodo, completeTodo }) => (
+  <table className="min-w-full divide-y divide-gray-200">
+    <thead className="bg-gray-50">
+      <tr>
+        {Object.keys(todos[0]).map((key) => (
+          <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+            {key}
+          </th>
+        ))}
+        <th scope="col"></th>
+      </tr>
+    </thead>
+    <tbody>
+      {todos.map((todo) => (
+        <Todo key={todo.id} todo={todo} deleteTodo={deleteTodo} completeTodo={completeTodo} />
+      ))}
+    </tbody>
+  </table>
+);
+export default TodoList;
+
+----
+app\src\components\Todo.js
+import React from "react";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faTrash, faCheck, faXmark } from "@fortawesome/free-solid-svg-icons";
+
+const Todo = ({ todo, deleteTodo, completeTodo }) => {
+  const handleDelete = (e) => {
+    e.preventDefault();
+    deleteTodo(todo.id);
+  };
+
+  const handleComplete = (e) => {
+    e.preventDefault();
+    completeTodo(todo.id);
+  };
+
+  return (
+    <tr className="hover:bg-gray-100">
+      {Object.values(todo).map((value) => (
+        <td className={`px-6 py-4 capitalize ${todo.complete ? "text-decoration-line: line-through" : ""} ${todo.important ? "font-bold" : ""}`}>{value.toString()}</td>
+      ))}
+      <td className="text-right">
+        <div className="w-full">
+          <button onClick={handleDelete} className="rounded bg-red-500 text-white py-2 px-4 hover:bg-red-600 mr-2">
+            <FontAwesomeIcon icon={faTrash} />
+          </button>
+          <button
+            onClick={handleComplete}
+            className={`rounded ${todo.complete ? "bg-yellow-500" : "bg-green-500"} text-white py-2 px-4 mr-2 ${
+              todo.complete ? "hover:bg-yellow-600" : "hover:bg-green-600"
+            }`}
+          >
+            <div style={{ width: "1rem", height: "1.5rem" }}>
+              {todo.complete ? <FontAwesomeIcon icon={faXmark} /> : <FontAwesomeIcon icon={faCheck} />}
+            </div>
+          </button>
+        </div>
+      </td>
+    </tr>
+  );
+};
+
+export default Todo;
+
+----
+app\src\components\PromptForm.js
+import React, { useState } from "react";
+
+const PromptForm = ({ executePrompt }) => {
+  const [prompt, setPrompt] = useState("");
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    executePrompt(prompt);
+    setPrompt("");
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="flex py-2 mb-2">
+      <input type="text" value={prompt} onChange={(e) => setPrompt(e.target.value)} className="flex-1 border p-2 mr-2 placeholder:italic placeholder:text-slate-400 focus:outline-none focus:border-blue-500 focus:ring-sky-500 focus:ring-1" placeholder="Prompt for anything..." />
+      <button type="submit" className="bg-blue-500 hover:bg-blue-600 px-5 text-white">
+        Execute
+      </button>
+    </form>
+  );
+};
+
+export default PromptForm;
+
+----
+app\public\robots.txt
+# https://www.robotstxt.org/robotstxt.html
+User-agent: *
+Disallow:
+
+----
+app\public\manifest.json
+{
+  "short_name": "React App",
+  "name": "Create React App Sample",
+  "icons": [
+    {
+      "src": "favicon.ico",
+      "sizes": "64x64 32x32 24x24 16x16",
+      "type": "image/x-icon"
+    },
+    {
+      "src": "logo192.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "logo512.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ],
+  "start_url": ".",
+  "display": "standalone",
+  "theme_color": "#000000",
+  "background_color": "#ffffff"
+}
+
+----
+app\public\index.html
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#000000" />
+    <meta
+      name="description"
+      content="Web site created using create-react-app"
+    />
+    <link rel="apple-touch-icon" href="%PUBLIC_URL%/logo192.png" />
+    <!--
+      manifest.json provides metadata used when your web app is installed on a
+      user's mobile device or desktop. See https://developers.google.com/web/fundamentals/web-app-manifest/
+    -->
+    <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
+    <!--
+      Notice the use of %PUBLIC_URL% in the tags above.
+      It will be replaced with the URL of the `public` folder during the build.
+      Only files inside the `public` folder can be referenced from the HTML.
+
+      Unlike "/favicon.ico" or "favicon.ico", "%PUBLIC_URL%/favicon.ico" will
+      work correctly both with client-side routing and a non-root public URL.
+      Learn how to configure a non-root public URL by running `npm run build`.
+    -->
+    <title>React App</title>
+  </head>
+  <body>
+    <noscript>You need to enable JavaScript to run this app.</noscript>
+    <div id="root"></div>
+    <!--
+      This HTML file is a template.
+      If you open it directly in the browser, you will see an empty page.
+
+      You can add webfonts, meta tags, or analytics to this file.
+      The build step will place the bundled scripts into the <body> tag.
+
+      To begin the development, run `npm start` or `yarn start`.
+      To create a production bundle, use `npm run build` or `yarn build`.
+    -->
+  </body>
+</html>
+
+--END--
