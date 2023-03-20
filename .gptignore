@@ -72,3 +72,4 @@ Dockerfile
 Jenkinsfile
 .travis.yml
 *.code-workspace
+output.txt

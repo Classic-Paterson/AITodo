@@ -9,6 +9,11 @@ The app is just a react todo that consumes a JSON object and displays it. Some f
 
 ## How to run
 
+### Root
+```
+npm i
+```
+
 ### Server:
 
 Add your Open Ai API key to .env as `OPEN_AI_API_KEY`
@@ -16,7 +21,7 @@ Add your Open Ai API key to .env as `OPEN_AI_API_KEY`
 ```
 cd server
 npm i
-node server/api.js 
+nodemon server/api.js 
 ```
 
 ### App:
