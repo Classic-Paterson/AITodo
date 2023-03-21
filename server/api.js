@@ -68,7 +68,7 @@ app.post("/todos", async (req, res) => {
     const response = await callApi(prompt);
     const data = await response.json();
 
-    todos = JSON.parse(data.choices[0].text);
+    todos = JSON.parse(data.choices[0].message.content);
     sortTodos();
 
     res.status(201).json({ message: "Todo created successfully", todos });
@@ -88,7 +88,7 @@ app.put("/todos/:id", async (req, res) => {
     const response = await callApi(prompt);
 
     const data = await response.json();
-    const returnData = data.choices[0].text;
+    const returnData = data.choices[0].message.content;
     todos = JSON.parse(returnData);
     sortTodos();
 
@@ -112,7 +112,7 @@ app.put("/prompt", async (req, res) => {
       const response = await callApi(sneekyPrompt);
 
     const data = await response.json();
-    const returnData = data.choices[0].text;
+    const returnData = data.choices[0].message.content;
     todos = JSON.parse(returnData);
 
     res.json({
@@ -133,7 +133,7 @@ app.put("/todos/:id/complete", async (req, res) => {
     const response = await callApi(prompt);
 
     const data = await response.json();
-    const generatedTodo = data.choices[0].text;
+    const generatedTodo = data.choices[0].message.content;
     todos = JSON.parse(generatedTodo);
 
     res.json({
@@ -152,7 +152,7 @@ app.delete("/todos/:id", async (req, res) => {
     const prompt = getPrompt("delete", "", id, null);
     const response = await callApi(prompt);
     const data = await response.json();
-    todos = JSON.parse(data.choices[0].text);
+    todos = JSON.parse(data.choices[0].message.content);
     sortTodos();
 
 
@@ -174,7 +174,7 @@ app.get("/todos/:id", async (req, res) => {
     const response = await callApi(prompt);
     const data = await response.json();
 
-    const todo = JSON.parse(data.choices[0].text);
+    const todo = JSON.parse(data.choices[0].message.content);
 
     res.json(todo);
   } catch (err) {
@@ -189,7 +189,7 @@ app.get("/todos", (req, res) => {
 
 const callApi = async (prompt) => {
 
-  const API_URL = "https://api.openai.com/v1/engines/text-davinci-003/completions";
+  const API_URL = "https://api.openai.com/v1/chat/completions";
   const API_KEY = process.env.OPEN_AI_API_KEY;
   try {
 
@@ -200,8 +200,15 @@ const callApi = async (prompt) => {
         Authorization: `Bearer ${API_KEY}`,
       },
       body: JSON.stringify({
-        prompt: prompt,
+        model: "gpt-3.5-turbo",
+        messages: [{ role: "user", content: prompt }],
+        temperature: 0.7,
+        top_p: 1,
+        frequency_penalty: 0,
+        presence_penalty: 0,
         max_tokens: 2000,
+        stream: false,
+        n: 1,
       }),
     });
   } catch (error) {

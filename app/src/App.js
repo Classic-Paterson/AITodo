@@ -17,7 +17,6 @@ const App = () => {
     try {
       const res = await fetch("http://localhost:3000/todos");
       const data = await res.json();
-      console.log("todos", data)
       setTodos(data);
     } catch (err) {
       console.error(err);
@@ -89,7 +88,7 @@ const App = () => {
   }, []);
 
   return (
-    <div className="bg-white p-6 rounded-lg shadow-xl mx-auto max-w-3xl my-10">
+    <div className="bg-white p-6 rounded-lg shadow-xl mx-auto max-w-7xl my-10">
       <h1 className="text-4xl font-bold text-center mb-2">AI Todo</h1>
       <PromptForm executePrompt={executePrompt} />
       {loading && <div className="loading text-gray-600 text-center pt-3">Loading...</div>}
