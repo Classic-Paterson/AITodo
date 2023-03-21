@@ -59,7 +59,6 @@ function writePreamble(outputFilePath, preambleFilePath) {
 function main() {
   let [repoPath, ...args] = process.argv.slice(2);
   repoPath = repoPath ? repoPath : './';
-  console.log(repoPath);
 
   if (!repoPath) {
     console.log("Usage: node git_to_text.js /path/to/git/repository [-p /path/to/preamble.txt] [-o /path/to/output_file.txt]");
