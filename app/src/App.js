@@ -87,15 +87,33 @@ const App = () => {
     // eslint-disable-next-line
   }, []);
 
+  const undoLastPrompt = async () => {
+    showLoading();
+    setError(false);
+    try {
+      const res = await fetch(`http://localhost:3000/undo`, {
+        method: "PUT",
+      });
+      const data = await res.json();
+      setTodos(data.todos);
+    } catch (err) {
+      console.error(err);
+      setError(true);
+    } finally {
+      hideLoading();
+    }
+  };
+
   return (
-    <div className="bg-white p-6 rounded-lg shadow-xl mx-auto max-w-7xl my-10">
-      <h1 className="text-4xl font-bold text-center mb-2">AI Todo</h1>
-      <PromptForm executePrompt={executePrompt} />
+    <div className="container mx-auto px-4 py-10">
+      <h1 className="text-4xl font-bold text-center mb-6">AI Todo</h1>
+      <PromptForm executePrompt={executePrompt} undoLastPrompt={undoLastPrompt} />
       {loading && <div className="loading text-gray-600 text-center pt-3">Loading...</div>}
-      {!loading &&  todos?.length > 0 && <TodoList todos={todos} deleteTodo={deleteTodo} completeTodo={completeTodo} />}
+      {!loading && todos?.length > 0 && <TodoList todos={todos} deleteTodo={deleteTodo} completeTodo={completeTodo} />}
       {error && !loading && <div className="loading text-gray-600 text-center pt-3">Somethin' aint right...</div>}
     </div>
   );
+    
 };
 
 export default App;

@@ -18,6 +18,8 @@ let todos = [
   { id: 2, title: "Example Todo 2", complete: true, importance: 1 },
 ];
 
+let previousTodos = [];
+
 const sortTodos = () => {
   todos.sort((a, b) => {
     if (a.complete === b.complete) {
@@ -104,6 +106,7 @@ app.put("/todos/:id", async (req, res) => {
 // Update a todo
 app.put("/prompt", async (req, res) => {
   try {
+    previousTodos = [...todos];
     const { prompt } = req.body;
     let sneekyPrompt = `Given the state of this store: ${JSON.stringify(
       todos
@@ -122,6 +125,16 @@ app.put("/prompt", async (req, res) => {
   } catch (error) {
     res.status(500).json({ message: "An error occured" });
   }
+});
+
+app.put('/undo', (req, res) => {
+  if (previousTodos.length === 0) {
+    return res.status(400).json({ error: 'Nothing to undo' });
+  }
+
+  todos = previousTodos;
+  previousTodos = [];
+  res.json({ todos });
 });
 
 app.put("/todos/:id/complete", async (req, res) => {

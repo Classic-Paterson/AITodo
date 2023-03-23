@@ -1,4 +1,4 @@
-The following text is a Git repository with code. The structure of the text are sections that begin with ----, followed by a single line containing the file path and file name, followed by a variable amount of lines containing the file contents. The text representing the Git repository ends when the symbols --END-- are encountered. Before the --END-- symbol, only instructions using the aforementioned Git repository as context should be included.
+The following text is a continuation of Git repository with code. The structure of the text are sections that begin with ----, followed by a single line containing the file path and file name, followed by a variable amount of lines containing the file contents. The text representing the Git repository ends when the symbols --END-- are encounted before the --END-- symbol, only reply with "accepted". Any further text beyond --END-- are meant to be interpreted as instructions using the aforementioned Git repository as context.
 ----
 package.json
 {
@@ -51,7 +51,7 @@ function writePreamble(outputFilePath, preambleFilePath) {
   } else {
     appendFileSync(
       outputFilePath,
-      'The following text is a Git repository with code. The structure of the text are sections that begin with ----, followed by a single line containing the file path and file name, followed by a variable amount of lines containing the file contents. The text representing the Git repository ends when the symbols --END-- are encountered. Before the --END-- symbol, only instructions using the aforementioned Git repository as context should be included.\n'
+      'The following text is a continuation of Git repository with code. The structure of the text are sections that begin with ----, followed by a single line containing the file path and file name, followed by a variable amount of lines containing the file contents. The text representing the Git repository ends when the symbols --END-- are encounted before the --END-- symbol, only reply with "accepted". Any further text beyond --END-- are meant to be interpreted as instructions using the aforementioned Git repository as context.\n'
     );
   }
 }
@@ -185,6 +185,8 @@ let todos = [
   { id: 2, title: "Example Todo 2", complete: true, importance: 1 },
 ];
 
+let previousTodos = [];
+
 const sortTodos = () => {
   todos.sort((a, b) => {
     if (a.complete === b.complete) {
@@ -271,6 +273,7 @@ app.put("/todos/:id", async (req, res) => {
 // Update a todo
 app.put("/prompt", async (req, res) => {
   try {
+    previousTodos = [...todos];
     const { prompt } = req.body;
     let sneekyPrompt = `Given the state of this store: ${JSON.stringify(
       todos
@@ -289,6 +292,16 @@ app.put("/prompt", async (req, res) => {
   } catch (error) {
     res.status(500).json({ message: "An error occured" });
   }
+});
+
+app.put('/undo', (req, res) => {
+  if (previousTodos.length === 0) {
+    return res.status(400).json({ error: 'Nothing to undo' });
+  }
+
+  todos = previousTodos;
+  previousTodos = [];
+  res.json({ todos });
 });
 
 app.put("/todos/:id/complete", async (req, res) => {
@@ -609,10 +622,27 @@ const App = () => {
     // eslint-disable-next-line
   }, []);
 
+  const undoLastPrompt = async () => {
+    showLoading();
+    setError(false);
+    try {
+      const res = await fetch(`http://localhost:3000/undo`, {
+        method: "PUT",
+      });
+      const data = await res.json();
+      setTodos(data.todos);
+    } catch (err) {
+      console.error(err);
+      setError(true);
+    } finally {
+      hideLoading();
+    }
+  };
+
   return (
     <div className="bg-white p-6 rounded-lg shadow-xl mx-auto max-w-7xl my-10">
       <h1 className="text-4xl font-bold text-center mb-2">AI Todo</h1>
-      <PromptForm executePrompt={executePrompt} />
+      <PromptForm executePrompt={executePrompt} undoLastPrompt={undoLastPrompt} />
       {loading && <div className="loading text-gray-600 text-center pt-3">Loading...</div>}
       {!loading &&  todos?.length > 0 && <TodoList todos={todos} deleteTodo={deleteTodo} completeTodo={completeTodo} />}
       {error && !loading && <div className="loading text-gray-600 text-center pt-3">Somethin' aint right...</div>}
@@ -767,7 +797,7 @@ export default Todo;
 app\src\components\PromptForm.js
 import React, { useState } from "react";
 
-const PromptForm = ({ executePrompt }) => {
+const PromptForm = ({ executePrompt, undoLastPrompt }) => {
   const [prompt, setPrompt] = useState("");
 
   const handleSubmit = (e) => {
@@ -778,9 +808,24 @@ const PromptForm = ({ executePrompt }) => {
 
   return (
     <form onSubmit={handleSubmit} className="flex py-2 mb-2">
-      <input type="text" value={prompt} onChange={(e) => setPrompt(e.target.value)} className="flex-1 border p-2 mr-2 placeholder:italic placeholder:text-slate-400 focus:outline-none focus:border-blue-500 focus:ring-sky-500 focus:ring-1" placeholder="Prompt for anything..." />
+      <input
+        type="text"
+        value={prompt}
+        onChange={(e) => setPrompt(e.target.value)}
+        className="flex-1 border p-2 mr-2 placeholder:italic placeholder:text-slate-400 focus:outline-none focus:border-blue-500 focus:ring-sky-500 focus:ring-1"
+        placeholder="Prompt for anything..."
+      />
       <button type="submit" className="bg-blue-500 hover:bg-blue-600 px-5 text-white">
         Execute
+      </button>
+      <button
+        onClick={(e) => {
+          e.preventDefault();
+          undoLastPrompt();
+        }}
+        className="bg-red-500 hover:bg-red-600 px-5 text-white ml-2"
+      >
+        Undo
       </button>
     </form>
   );

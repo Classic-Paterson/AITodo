@@ -1,7 +1,7 @@
 import Todo from "./Todo";
 
 const TodoList = ({ todos, deleteTodo, completeTodo }) => (
-  <table className="min-w-full divide-y divide-gray-200">
+  <table className="min-w-full divide-y divide-gray-200 p-4 rounded-lg">
     <thead className="bg-gray-50">
       <tr>
         {Object.keys(todos[0]).map((key) => (
@@ -19,4 +19,5 @@ const TodoList = ({ todos, deleteTodo, completeTodo }) => (
     </tbody>
   </table>
 );
+
 export default TodoList;
