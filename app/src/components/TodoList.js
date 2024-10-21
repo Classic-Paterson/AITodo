@@ -1,23 +1,23 @@
+import React from "react";
+import { Table, TableHead, TableRow, TableCell, TableBody } from "@shadcn/ui";
 import Todo from "./Todo";
 
 const TodoList = ({ todos, deleteTodo, completeTodo }) => (
-  <table className="min-w-full divide-y divide-gray-200 p-4 rounded-lg">
-    <thead className="bg-gray-50">
-      <tr>
+  <Table>
+    <TableHead>
+      <TableRow>
         {Object.keys(todos[0]).map((key) => (
-          <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-            {key}
-          </th>
+          <TableCell key={key}>{key}</TableCell>
         ))}
-        <th scope="col"></th>
-      </tr>
-    </thead>
-    <tbody>
+        <TableCell></TableCell>
+      </TableRow>
+    </TableHead>
+    <TableBody>
       {todos.map((todo) => (
         <Todo key={todo.id} todo={todo} deleteTodo={deleteTodo} completeTodo={completeTodo} />
       ))}
-    </tbody>
-  </table>
+    </TableBody>
+  </Table>
 );
 
 export default TodoList;

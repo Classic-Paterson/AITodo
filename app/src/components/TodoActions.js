@@ -1,6 +1,6 @@
 import React from "react";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faTrash, faCheck, faXmark } from "@fortawesome/free-solid-svg-icons";
+import { Button, IconButton } from "@shadcn/ui";
+import { TrashIcon, CheckIcon, XIcon } from "@shadcn/icons";
 
 const TodoActions = ({ todo, deleteTodo, completeTodo }) => {
   const handleDelete = (e) => {
@@ -16,19 +16,17 @@ const TodoActions = ({ todo, deleteTodo, completeTodo }) => {
   return (
     <td className="text-right">
       <div className="w-full">
-        <button onClick={handleDelete} className="rounded bg-red-500 text-white py-2 px-4 hover:bg-red-600 mr-2">
-          <FontAwesomeIcon icon={faTrash} />
-        </button>
-        <button
+        <IconButton onClick={handleDelete} className="bg-red-500 text-white hover:bg-red-600 mr-2">
+          <TrashIcon />
+        </IconButton>
+        <IconButton
           onClick={handleComplete}
-          className={`rounded ${todo.complete ? "bg-yellow-500" : "bg-green-500"} text-white py-2 px-4 mr-2 ${
+          className={`rounded ${todo.complete ? "bg-yellow-500" : "bg-green-500"} text-white mr-2 ${
             todo.complete ? "hover:bg-yellow-600" : "hover:bg-green-600"
           }`}
         >
-          <div style={{ width: "1rem", height: "1.5rem" }}>
-            {todo.complete ? <FontAwesomeIcon icon={faXmark} /> : <FontAwesomeIcon icon={faCheck} />}
-          </div>
-        </button>
+          {todo.complete ? <XIcon /> : <CheckIcon />}
+        </IconButton>
       </div>
     </td>
   );

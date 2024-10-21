@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { Button, Card, CardContent, Typography, CircularProgress, Container } from "@shadcn/ui";
 import PromptForm from "./components/PromptForm";
 import TodoList from "./components/TodoList";
 
@@ -105,15 +106,30 @@ const App = () => {
   };
 
   return (
-    <div className="container mx-auto px-4 py-10">
-      <h1 className="text-4xl font-bold text-center mb-6">AI Todo</h1>
+    <Container>
+      <Typography variant="h1" align="center" gutterBottom>
+        AI Todo
+      </Typography>
       <PromptForm executePrompt={executePrompt} undoLastPrompt={undoLastPrompt} />
-      {loading && <div className="loading text-gray-600 text-center pt-3">Loading...</div>}
-      {!loading && todos?.length > 0 && <TodoList todos={todos} deleteTodo={deleteTodo} completeTodo={completeTodo} />}
-      {error && !loading && <div className="loading text-gray-600 text-center pt-3">Somethin' aint right...</div>}
-    </div>
+      {loading && (
+        <div className="loading text-gray-600 text-center pt-3">
+          <CircularProgress />
+        </div>
+      )}
+      {!loading && todos?.length > 0 && (
+        <Card>
+          <CardContent>
+            <TodoList todos={todos} deleteTodo={deleteTodo} completeTodo={completeTodo} />
+          </CardContent>
+        </Card>
+      )}
+      {error && !loading && (
+        <div className="loading text-gray-600 text-center pt-3">
+          Somethin' aint right...
+        </div>
+      )}
+    </Container>
   );
-    
 };
 
 export default App;
